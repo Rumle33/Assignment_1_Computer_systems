@@ -22,6 +22,50 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsi
   }
 }
 
+void grayscale(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
+for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+      output_image[x][y][0] = ((input_image[x][y][0]+input_image[x][y][1]+input_image[x][y][2])/3);
+      output_image[x][y][1] = output_image[x][y][0];
+      output_image[x][y][2] = output_image[x][y][1];
+
+    }
+  }
+}
+void binarize(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
+for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+     if(input_image[x][y][0]>THRESHOLD_FB){
+      output_image[x][y][0] = 255;
+      output_image[x][y][1] = 255;
+      output_image[x][y][2] = 255;
+     }
+     else{
+      output_image[x][y][0] = 0;
+      output_image[x][y][1] = 0;
+      output_image[x][y][2] = 0;
+     }
+    }
+  }
+
+}
+void addCross(unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], int x, int y){
+  for(int i = -10; i < 10; i++){
+    for(int j = -1; j < 1; j++) {
+      output_image[x+i][y+j][0] = 255;
+      output_image[x+i][y+j][1] = 0;
+      output_image[x+i][y+j][2] = 0;
+      output_image[x+j][y+i][0] = 255;
+      output_image[x+j][y+i][1] = 0;
+      output_image[x+j][y+i][2] = 0;
+    }
+  }
+  
+}
   //Declaring the array to store the image (unsigned char = unsigned 8 bit)
   unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
   unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
@@ -47,7 +91,14 @@ int main(int argc, char** argv)
   read_bitmap(argv[1], input_image);
 
   //Run inversion
-  invert(input_image,output_image);
+  grayscale(input_image, output_image);
+
+  binarize(input_image, output_image);
+  for(int k = 0; k < 100;k++){
+    int randx = rand()%900+25;
+    int randy = rand()%900+25;
+    addCross(output_image,randx,randy);
+  }
 
   //Save image to file
   write_bitmap(output_image, argv[2]);
