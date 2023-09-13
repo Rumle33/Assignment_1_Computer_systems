@@ -21,19 +21,7 @@ void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsi
     }
   }
 }
-
-void grayscale(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
-for (int x = 0; x < BMP_WIDTH; x++)
-  {
-    for (int y = 0; y < BMP_HEIGTH; y++)
-    {
-      output_image[x][y][0] = ((input_image[x][y][0]+input_image[x][y][1]+input_image[x][y][2])/3);
-      output_image[x][y][1] = output_image[x][y][0];
-      output_image[x][y][2] = output_image[x][y][1];
-
-    }
-  }
-}
+/*
 void binarize(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
 for (int x = 0; x < BMP_WIDTH; x++)
   {
@@ -53,6 +41,7 @@ for (int x = 0; x < BMP_WIDTH; x++)
   }
 
 }
+*/
 void addCross(unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], int x, int y){
   for(int i = -10; i < 10; i++){
     for(int j = -1; j < 1; j++) {
@@ -66,9 +55,44 @@ void addCross(unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], i
   }
   
 }
+void flattenGrayscale(unsigned char image_array[BMP_WIDTH][BMP_HEIGTH], unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+     image_array[x][y] = input_image[x][y][0]; //image already grayscale
+    }
+  }
+}
+void binarize(unsigned char image_array[BMP_WIDTH][BMP_HEIGTH]){
+for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+    if(image_array[x][y]>THRESHOLD_FB){
+      image_array[x][y]= 0xFF;
+    }
+    else{
+      image_array[x][y]= 0x00;
+    }
+    }
+  }
+}
+void inflate(unsigned char image_array[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
+  for (int x = 0; x < BMP_WIDTH; x++)
+  {
+    for (int y = 0; y < BMP_HEIGTH; y++)
+    {
+     output_image[x][y][0] = image_array[x][y]; 
+     output_image[x][y][1] = output_image[x][y][0];
+     output_image[x][y][2] = output_image[x][y][1];
+    }
+  }
+}
   //Declaring the array to store the image (unsigned char = unsigned 8 bit)
   unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
   unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+  unsigned char image_array[BMP_WIDTH][BMP_HEIGTH];
 
 //Main function
 int main(int argc, char** argv)
@@ -90,15 +114,9 @@ int main(int argc, char** argv)
   //Load image from file
   read_bitmap(argv[1], input_image);
 
-  //Run inversion
-  grayscale(input_image, output_image);
-
-  binarize(input_image, output_image);
-  for(int k = 0; k < 100;k++){
-    int randx = rand()%900+25;
-    int randy = rand()%900+25;
-    addCross(output_image,randx,randy);
-  }
+ flattenGrayscale(image_array,input_image);
+ binarize(image_array);
+ inflate(image_array,output_image);
 
   //Save image to file
   write_bitmap(output_image, argv[2]);
