@@ -4,6 +4,7 @@
 #define BMP_WIDTH 950
 #define BMP_HEIGTH 950
 #define BMP_CHANNELS 3
+#define THRESHOLD_FB 90
 
 // Public function declarations
 void read_bitmap(char * input_file_path, unsigned char output_image_array[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]);
