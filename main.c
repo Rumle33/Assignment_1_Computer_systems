@@ -7,7 +7,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cbmp.h"
-
+unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+unsigned char image_array[BMP_WIDTH][BMP_HEIGTH];
+unsigned char output_array[BMP_WIDTH][BMP_HEIGTH];
+unsigned char (*in_image)[BMP_HEIGTH] = image_array;
+unsigned char (*out_image)[BMP_HEIGTH] = output_array; // dont worry we reverse it
+unsigned char cell_array[BMP_WIDTH][BMP_HEIGTH];
+unsigned int count = 0;
+unsigned int step = 0;
+unsigned char neighbours = 0x00;
+unsigned char eroded = 1;
+unsigned char hasEdgePixels = 0x00;
+unsigned char offset = 5;
+unsigned int threshold = THRESHOLD_FB;
 // Function to invert pixels of an image (negative)
 void invert(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
@@ -74,7 +87,7 @@ void binarize(unsigned char image_array[BMP_WIDTH][BMP_HEIGTH])
   {
     for (int y = 0; y < BMP_HEIGTH; y++)
     {
-      if (image_array[x][y] > THRESHOLD_FB)
+      if (image_array[x][y] > threshold)
       {
         image_array[x][y] = 0xFF;
       }
@@ -85,20 +98,51 @@ void binarize(unsigned char image_array[BMP_WIDTH][BMP_HEIGTH])
     }
   }
 }
+
 // Declaring the array to store the image (unsigned char = unsigned 8 bit)
-unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char image_array[BMP_WIDTH][BMP_HEIGTH];
-unsigned char output_array[BMP_WIDTH][BMP_HEIGTH];
-unsigned char (*in_image)[BMP_HEIGTH] = image_array;
-unsigned char (*out_image)[BMP_HEIGTH] = output_array; // dont worry we reverse it
-unsigned char cell_array[BMP_WIDTH][BMP_HEIGTH];
-unsigned int count = 0;
-unsigned int step = 0;
-unsigned char neighbours = 0x00;
-unsigned char eroded = 1;
-unsigned char hasEdgePixels = 0x00;
-unsigned char offset = 5;
+
+void otsu(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
+  int histogram[256];
+  double sum = 0.0;
+  double sumB = 0.0;
+  double var = 0;
+  double var_max = 0;
+  double mean1 = 0.0;
+  double mean2 = 0.0;
+  int q1 = 0; //otsus stuff
+  int q2 = 0;
+  //clean histogram
+  for(int i = 0; i<256; i++){
+    histogram[i] = 0;
+  }
+  for(int row = 0; row < BMP_WIDTH; row++){
+    for(int col = 0; col < BMP_HEIGTH; col++){
+      histogram[input_image[row][col][0]]++;
+    }
+  }
+  for(int i = 0; i<256; i++){
+    sum+= i*histogram[i];
+  }
+  for(int t = 0; t<256; t++){
+    q1 += histogram[t];
+    if(q1 == 0){
+      continue;
+    }
+    
+    q2 = (950*950)-q1;
+    sumB += t*histogram[t];
+    mean1 = sumB/q1;
+    mean2 = (sum-sumB)/q2;
+    var = q1 * q2 * ((mean1 - mean2)*(mean1 - mean2));
+    if(var>var_max){
+      threshold = t;
+      var_max = var;
+    }
+
+  }
+  printf("Threshold: %d",threshold);
+  //now we binarize
+}
 void inflate(unsigned char image_array[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS])
 {
   for (int x = 0; x < BMP_WIDTH; x++)
@@ -289,10 +333,12 @@ int main(int argc, char **argv)
 
   // Load image from file
   read_bitmap(argv[1], input_image);
-
+  otsu(input_image);
   flattenGrayscale(image_array, input_image);
   binarize(image_array);
   inflate(image_array, output_image);
+  write_bitmap(output_image,"Otsu.bmp");
+
 
   erode(image_array);
   inflate(image_array, output_image);
